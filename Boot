@@ -1,0 +1,43 @@
+from pynput.mouse import Button, Controller, Listener
+import time
+import threading
+
+mouse = Controller()
+
+def click_raton_posicion(x, y):
+    """Mueve el mouse a (x, y) y hace clic cada 2 segundos hasta que se mueva el mouse."""
+    print(f"Moviendo el ratón a {x}, {y}")
+
+    # Bandera para indicar si el mouse se ha movido
+    mouse_moved = threading.Event()
+
+    def on_move(x, y):
+        """Función que se ejecuta cuando el mouse se mueve."""
+        global last_x, last_y  # Accede a las variables globales
+        threshold = 10  # Define un umbral de movimiento
+
+        if abs(x - last_x) > threshold or abs(y - last_y) > threshold:
+            print(f"Mouse movido significativamente a ({x}, {y}), deteniendo el script.")
+            mouse_moved.set()  # Activa la bandera
+        else:
+            print(f"Mouse movido a ({x}, {y}), pero no lo suficiente para detener el script.")
+
+        last_x, last_y = x, y  # Actualiza la posición anterior del mouse
+
+    # Iniciar el listener en un hilo para detectar movimiento del mouse sin bloquear el programa
+    with Listener(on_move=on_move) as listener:
+        global last_x, last_y  # Accede a las variables globales
+        last_x, last_y = mouse.position  # Guarda la posición inicial del mouse
+
+        while not mouse_moved.is_set():
+            mouse.position = (x, y)
+            time.sleep(0.2)
+            print(f"Haciendo clic en {mouse.position}")
+            mouse.press(Button.left)
+            mouse.release(Button.left)
+            time.sleep(.5)
+
+        listener.stop()  # Asegura que el listener se detenga
+
+# Ejecutar la función de clics
+click_raton_posicion(314, 209)
